@@ -12,7 +12,8 @@ def answer_count(questions, true_answers, answers, minratio = 75):
     correct_answers = 0
     answer_count = len(answers)
     for q, a, ta in zip(questions, answers, true_answers):
-        if fuzz.ratio(pipe(q,a)['answer'].lower(), ta) >= 75:
+        res = pipe(q,a)
+        if fuzz.ratio(res['answer'].lower(), ta) >= minratio:
             correct_answers += 1
     return answer_count, correct_answers
 
