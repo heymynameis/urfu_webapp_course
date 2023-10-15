@@ -1,3 +1,4 @@
 streamlit
 thefuzz
+tensorflow
 transformers
