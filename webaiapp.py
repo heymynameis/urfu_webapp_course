@@ -2,18 +2,22 @@ import streamlit as st
 from transformers import pipeline
 from io import StringIO
 
-pipe = pipeline("question-answering", model="AndrewChar/model-QA-5-epoch-RU")
 title_questions = 'Выберите файл txt вопросов'
 title_true_answers = 'Выберите файл txt верных ответов'
 title_answers = 'Выберите файл txt ответов студента'
+
+@st.cache(allow_output_mutation=True)
+def load_model():
+    return pipeline("question-answering", model="AndrewChar/model-QA-5-epoch-RU")
+
+pipe = load_model()
 
 def answer_count(questions, true_answers, answers, minratio = 75):
     from thefuzz import fuzz
     correct_answers = 0
     answer_count = len(answers)
     for q, a, ta in zip(questions, answers, true_answers):
-        res = pipe(q,a)
-        if fuzz.ratio(res['answer'].lower(), ta) >= minratio:
+        if fuzz.ratio(pipe(q,a)['answer'].lower(), ta) >= minratio:
             correct_answers += 1
     return answer_count, correct_answers
 
