@@ -7,7 +7,6 @@ title_questions = 'Выберите файл txt вопросов'
 title_true_answers = 'Выберите файл txt верных ответов'
 title_answers = 'Выберите файл txt ответов студента'
 
-# @st.cache_resource()
 @st.cache_resource()
 def load_model():
     return pipeline("question-answering", model="AndrewChar/model-QA-5-epoch-RU")
