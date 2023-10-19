@@ -1,18 +1,24 @@
 import streamlit as st
 from transformers import pipeline
 from io import StringIO
+from thefuzz import fuzz
 
-pipe = pipeline("question-answering", model="AndrewChar/model-QA-5-epoch-RU")
 title_questions = 'Выберите файл txt вопросов'
 title_true_answers = 'Выберите файл txt верных ответов'
 title_answers = 'Выберите файл txt ответов студента'
 
+# @st.cache_resource()
+@st.cache_resource()
+def load_model():
+    return pipeline("question-answering", model="AndrewChar/model-QA-5-epoch-RU")
+
+pipe = load_model()
+
 def answer_count(questions, true_answers, answers, minratio = 75):
-    from thefuzz import fuzz
     correct_answers = 0
     answer_count = len(answers)
     for q, a, ta in zip(questions, answers, true_answers):
-        if fuzz.ratio(pipe(q,a)['answer'].lower(), ta) >= 75:
+        if fuzz.ratio(pipe(q,a)['answer'].lower(), ta) >= minratio:
             correct_answers += 1
     return answer_count, correct_answers
 
@@ -24,6 +30,15 @@ def read_file_lines_str(title):
         str_out = stringio.read()
     return str_out.split('\n')
 
+def show_answers(questions, true_answers, answers, min_ratio):
+    cntr = 0
+    for q, a, ta in zip(questions, answers, true_answers):
+        cntr+=1
+        cur_answ = pipe(q,a)['answer'].lower()
+        preambule = "Ошибка!"
+        if fuzz.ratio(cur_answ, ta) >= min_ratio: preambule = "Верный"
+        st.write(str(cntr), ")", preambule, "(база:", ta, "; из ответа студента:", cur_answ)
+
 st.title('Автоматическая проверка ответов')
 st.write("Прикрепите файлы для анализа, каждый ответ/вопрос с новой строки")
 
@@ -34,9 +49,10 @@ min_ratio = st.text_input('Введите допустимый процент с
 
 if min_ratio and questions and true_answers and answers:
     min_ratio = int(min_ratio)
-    result = st.button('Проанализировать файл ответов')
+    answer_count, correct_answers = answer_count(questions, true_answers, answers, min_ratio)
+    st.write("Верных/всего ответов: ", correct_answers, "/", answer_count)
+    st.write("Процент верных ответов: ", round(100*correct_answers/answer_count))
+    result = st.button('Показать ответы студента')
     if result:
-        answer_count, correct_answers = answer_count(questions, true_answers, answers, min_ratio)
-        st.write("Верных/всего ответов: ", correct_answers, "/", answer_count)
-        st.write("Процент верных ответов: ", round(100*correct_answers/answer_count))
+        show_answers(questions, true_answers, answers, min_ratio)
 else: st.write("Выберите все файлы и укажите допустимый процент для продолжения")
